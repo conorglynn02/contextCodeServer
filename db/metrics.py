@@ -1,6 +1,6 @@
 import datetime
 from dataclasses import dataclass, field
-from .models import Base, Device, DeviceMetricType, MetricSnapshot, MetricValue, Metric
+from .models import Base, Device, DeviceMetricType, MetricSnapshot, MetricValue
 # from cache_logic.caching import Cache
 
 # class CachingManager:
