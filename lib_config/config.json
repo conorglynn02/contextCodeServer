@@ -1,15 +1,15 @@
 {
     "server": {
-        "isRemote": false,
+        "isRemote": true,
         "local": {
             "base": "http://127.0.0.1:5000"
         },
         "remote": {
-            "base": "http://beans"
+            "base": "https://contextcodeserver.onrender.com"
         },
         "api": {
             "endpoints": {
-                "post_metric_snapshot": "/add_snapshot",
+                "post_metric_snapshot": "/post_metric_snapshot",
                 "get_all_metrics": "/get_all_metrics",
                 "get_metric_snapshot": "/get_metric_snapshot"
             }

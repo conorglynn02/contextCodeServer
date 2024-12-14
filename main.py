@@ -196,7 +196,7 @@ def post_metric_snapshot():
     #     "client_timezone_mins": 0
     # }
     try:
-        application.logger.info("Add metric called")
+        application.logger.info("Post metric called")
         with DatabaseManager(application.logger, application.engine) as session:
             data = request.json
             device_id = data["device_id"]

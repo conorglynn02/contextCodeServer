@@ -44,22 +44,6 @@ class MetricSnapshot(Base):
 
     device = relationship('Device')
 
-    # add to metrics_snapshots table and update to get the id
-
-    # def to_dict(self):
-    #     return {
-    #         "metric_snapshot_id": self.metric_snapshot_id,
-    #         "device_id": self.device_id,
-    #         "device_name": self.device.device_name,
-    #         "device_metric_type_id": self.device_metric_type_id,
-    #         "device_metric_type_name": self.device_metric_type_name,
-    #         "metric_value": self.metric_value,
-    #         "client_timestamp_utc": self.client_timestamp_utc,
-    #         "client_timezone_mins": self.client_timezone_mins,
-    #         "server_timestamp_utc": self.server_timestamp_utc,
-    #         "server_timezone_mins": self.server_timezone_mins,
-    #     }
-
     def to_dict(self):
         return {
             "metric_snapshot_id": self.metric_snapshot_id,
@@ -80,18 +64,3 @@ class MetricValue(Base):
 
     device_metric_type = relationship('DeviceMetricType')
     metric_snapshot = relationship('MetricSnapshot')
-
-class Metric:
-    def __init__(self,device_id, device_name, device_metric_type_id, 
-                    device_metric_type_name, client_timestamp_utc, 
-                    client_timezone_mins, metric_value, 
-                    server_timestamp_utc, server_timezone_mins):
-        self.device_id = device_id
-        self.device_name = device_name
-        self.device_metric_type_id = device_metric_type_id
-        self.device_metric_type_name = device_metric_type_name
-        self.client_timestamp_utc = client_timestamp_utc
-        self.client_timezone_mins = client_timezone_mins
-        self.metric_value = metric_value
-        self.server_timestamp_utc = server_timestamp_utc
-        self.server_timezone_mins = server_timezone_mins

@@ -8,18 +8,12 @@ from .models import Base, Device, DeviceMetricType, MetricSnapshot, MetricValue,
 #         if not self.cache.isExpired():
 #             return self.cache.getData()
 #         return None
-# @dataclass
-# class MyPerson:
-#     person_id: int
-#     name: str
-#     dob: str
 
 @dataclass
 class Metrics:
     def __init__(self, logger):
         # self.people: list[Person] = field(default_factory=list)
         self.logger = logger
-        # self.session = session
         # self.cache = Cache()
 
     def getAllMetrics(self, session):

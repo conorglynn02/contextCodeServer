@@ -8,7 +8,6 @@ class DatabaseManager:
             Session = sessionmaker(bind=engine)
             self.session = Session()
             self.logger.debug("Connected to the database")
-            # self.session = Session
         except Exception as e:
             self.logger.error("An error occurred: %s", e)
             raise e
