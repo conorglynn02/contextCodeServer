@@ -20,11 +20,36 @@ app = Flask(__name__)
 # Define the Dash app
 dash_app = dash.Dash(__name__, server=app, url_base_pathname='/dash/')
 
+def get_device_options():
+    session = None
+    try:
+        with DatabaseManager(application.logger, application.engine) as session:
+            devices = session.query(Device.device_name).all()
+            return [{'label': device[0], 'value': device[0]} for device in devices]
+    except Exception as e:
+        application.logger.error(f"Error fetching devices: {e}")
+        return []
+
+
 # Dash layout
 def gauge_page():
+    device_options = get_device_options()
     return html.Div([
         html.H1("Gauge Dashboard"),
         dcc.Link("Go to Table", href="/dash/table"),
+        dcc.Dropdown(
+            id='device-dropdown',
+            options=device_options,
+            value=device_options[0]['value'] if device_options else None,
+            placeholder="Select a device",
+            style={'width': '50%'}
+        ),
+        dcc.Dropdown(
+            id='metric-dropdown',
+            options=[],
+            placeholder="Select a metric",
+            style={'width': '50%'}
+        ),
         dcc.Graph(id="gauge"),
         dcc.Interval(
             id="gauge-interval",
@@ -47,7 +72,7 @@ def table_page():
         ),
         dcc.Interval(
             id="table-interval",
-            interval=10000,  # Update every 5 seconds
+            interval=10000,  # Update every 10 seconds
             n_intervals=0
         )
     ])
@@ -79,12 +104,17 @@ def display_page(pathname):
 # Callback to update the gauge
 @dash_app.callback(
     dash.dependencies.Output("gauge", "figure"),
-    [dash.dependencies.Input("gauge-interval", "n_intervals")]
+    [
+        dash.dependencies.Input("device-dropdown", "value"),
+        dash.dependencies.Input("metric-dropdown", "value"),
+        dash.dependencies.Input("gauge-interval", "n_intervals")
+    ]
 )
-def update_gauge(n):
-    return _update_gauge_callback()
+
+def update_gauge(device_name, metric_type, n):
+    return _update_gauge_callback(device_name, metric_type)
     
-def _update_gauge_callback():
+def _update_gauge_callback(device_name, metric_type):
     session = None
     final_value = 0
     try:
@@ -97,8 +127,8 @@ def _update_gauge_callback():
                 .join(DeviceMetricType, MetricValue.device_metric_type_id == DeviceMetricType.device_metric_type_id)\
                 .join(Device, DeviceMetricType.device_id == Device.device_id)\
                 .filter(
-                    Device.device_name == "ConorG",
-                    DeviceMetricType.name == 'RamUsage'
+                    Device.device_name == device_name,  # now using the selected device name
+                    DeviceMetricType.name == metric_type  # now using the selected metric type
                 )\
                 .order_by(MetricSnapshot.metric_snapshot_id.desc())\
                 .first()
@@ -116,10 +146,34 @@ def _update_gauge_callback():
     fig = go.Figure(go.Indicator(
         mode="gauge+number",
         value=final_value,
-        title={"text": "Metric Value"},
+        title={"text": f"{metric_type} Value"},
         gauge={"axis": {"range": [0, 100]}}  # Adjust range as needed
     ))
     return fig
+
+@dash_app.callback(
+    dash.dependencies.Output("metric-dropdown", "options"),
+    [dash.dependencies.Input("device-dropdown", "value")]
+)
+def update_metrics_dropdown(device_name):
+    """
+    Update the metrics dropdown options based on the selected device.
+    """
+    session = None
+    try:
+        # Query the database to get metrics for the selected device
+        with DatabaseManager(application.logger, application.engine) as session:
+            metrics = session.query(DeviceMetricType.name)\
+                .join(Device, DeviceMetricType.device_id == Device.device_id)\
+                .filter(Device.device_name == device_name)\
+                .all()
+            
+            # Format results for the dropdown
+            metric_options = [{'label': metric[0], 'value': metric[0]} for metric in metrics]
+            return metric_options
+    except Exception as e:
+        application.logger.error(f"Error fetching metrics for device '{device_name}': {e}")
+        return []  # Return empty options if an error occurs
 
 # Callback to update the table
 @dash_app.callback(

@@ -33,11 +33,11 @@ class Metrics:
                              session):
         
         # Find or create device
-        device = session.query(Device).filter_by(device_id=str(device_id)).first()
+        device = session.query(Device).filter_by(device_id=device_id).first()
         if not device:
             device = Device(
                 device_id=device_id,
-                name=device_name
+                device_name=device_name
             )
             session.add(device)
             session.flush()  # Get the ID
