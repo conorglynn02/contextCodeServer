@@ -1,12 +1,5 @@
 {
     "server": {
-        "isRemote": true,
-        "local": {
-            "base": "http://127.0.0.1:5000"
-        },
-        "remote": {
-            "base": "https://contextcodeserver.onrender.com"
-        },
         "api": {
             "endpoints": {
                 "post_metric_snapshot": "/post_metric_snapshot",

@@ -4,7 +4,7 @@ class DatabaseManager:
     def __init__(self, logger, engine):
         self.logger = logger
         try:
-            # Create a session
+            # create a session
             Session = sessionmaker(bind=engine)
             self.session = Session()
             self.logger.debug("Connected to the database")

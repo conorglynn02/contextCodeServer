@@ -23,7 +23,7 @@ class Metrics:
                            client_timestamp_utc, client_timezone_mins,
                              session):
         
-        # Find or create device
+        # find or create device
         device = session.query(Device).filter_by(device_id=device_id).first()
         if not device:
             device = Device(
@@ -31,7 +31,7 @@ class Metrics:
                 device_name=device_name
             )
             session.add(device)
-            session.flush()  # Get the ID
+            session.flush()  # get the id of newly created device to use later
 
         server_timestamp_utc = datetime.now().strftime("%d-%m-%Y %H:%M:%S") 
         now_UTC = datetime.now(timezone.utc)

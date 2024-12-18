@@ -40,12 +40,10 @@ class Config:
     database: DatabaseConfig
     logging_config: LoggingConfig
 
-    hasError: bool
 
     def __init__(self, config_path: str = "lib_config/config.json"):
         self.set_up_config(config_path)
         self.set_up_logger()
-        hasError = False
 
     def set_up_config(self, config_path):
         if not os.path.exists(config_path):
@@ -84,14 +82,13 @@ class Config:
         )
     
     def set_up_logger(self):
-        """Set up the logging system based on the loaded configuration."""
         log_config = self.data.get("logging_config", {})
         console_config = log_config.get("console_output", {})
         file_config = log_config.get("file_output", {})
 
-        # Create logger
+        # create logger
         logger = logging.getLogger()
-        logger.setLevel(logging.DEBUG)  # Capture all levels; handlers will filter
+        logger.setLevel(logging.DEBUG)  # capture all levels; handlers will filter
 
         # Console logging
         if console_config.get("enabled", False):

@@ -4,7 +4,6 @@ import dash
 from dash import dcc, html, dash_table
 import plotly.graph_objects as go
 import pandas as pd
-# from dash.dependencies import Input, Output
 from lib_config.config import Config
 from db.metrics import Metrics
 from db.models import MetricSnapshot, DeviceMetricType, Device, MetricValue
@@ -17,7 +16,7 @@ from sqlalchemy import create_engine
 
 app = Flask(__name__)
 
-# Define the Dash app
+# define dash app
 dash_app = dash.Dash(__name__, server=app, url_base_pathname='/dash/')
 
 def get_device_options():
@@ -31,7 +30,7 @@ def get_device_options():
         return []
 
 
-# Dash layout
+# dash layout
 def gauge_page():
     device_options = get_device_options()
     return html.Div([
@@ -56,7 +55,7 @@ def gauge_page():
         dcc.Graph(id="gauge"),
         dcc.Interval(
             id="gauge-interval",
-            interval=5000,  # Update every 5 seconds
+            interval=5000,  # update every 5 seconds
             n_intervals=0
         )
     ])
@@ -85,12 +84,7 @@ def table_page():
         html.Div(id="page-number-display", children="Page 1 of X"),
         html.Button("Previous", id="previous-page", n_clicks=0, disabled=True),
         html.Button("Next", id="next-page", n_clicks=0, disabled=True),
-        dcc.Store(id="current-page", data=1),  # Store current page number
-        # dcc.Interval(
-        #     id="table-interval",
-        #     interval=10000,  # Update every 10 seconds
-        #     n_intervals=0
-        # )
+        dcc.Store(id="current-page", data=1),  # store current page number
     ])
 
 def histogram_page():
@@ -108,7 +102,7 @@ dash_app.layout = html.Div([
     html.Div(id="page-content")
 ])
 
-# Callback to update the gauge with data from Flask
+# current page callback
 @dash_app.callback(
     dash.dependencies.Output("page-content", "children"),
     [dash.dependencies.Input("url", "pathname")]
@@ -121,15 +115,17 @@ def display_page(pathname):
     elif pathname == "/dash/histogram":
         return histogram_page()
     else:
-        # Default page or 404
+        # 404 page
         return html.Div([
             html.H1("404 - Page Not Found"),
             dcc.Link("Go to Gauge", href="/dash/gauge"),
             html.Br(),
             dcc.Link("Go to Table", href="/dash/table"),
+            html.Br(),
+            dcc.Link("Go to Histogram", href="/dash/histogram"),
         ])
 
-# Callback to update the gauge
+# gauge callback
 @dash_app.callback(
     dash.dependencies.Output("gauge", "figure"),
     [
@@ -170,42 +166,41 @@ def _update_gauge_callback(device_name, metric_type):
     else:
         final_value = 0
 
-    # Update the gauge figure
+    # update the gauge figure
     fig = go.Figure(go.Indicator(
         mode="gauge+number",
         value=final_value,
         title={"text": f"{metric_type} Value"},
-        gauge={"axis": {"range": [0, 100]}}  # Adjust range as needed
+        gauge={"axis": {"range": [0, 100]}}
     ))
     return fig
 
+# metrics callback
 @dash_app.callback(
     dash.dependencies.Output("metric-dropdown", "options"),
     [dash.dependencies.Input("device-dropdown", "value")]
 )
 def update_metrics_dropdown(device_name):
-    """
-    Update the metrics dropdown options based on the selected device.
-    """
+    # updating the metrics dropdown options based on the selected device
     session = None
     try:
-        # Query the database to get metrics for the selected device
+        # getting metrics types for the selected device
         with DatabaseManager(application.logger, application.engine) as session:
             metrics = session.query(DeviceMetricType.name)\
                 .join(Device, DeviceMetricType.device_id == Device.device_id)\
                 .filter(Device.device_name == device_name)\
                 .all()
             
-            # Format results for the dropdown
+            # format results for the dropdown
             metric_options = [{'label': metric[0], 'value': metric[0]} for metric in metrics]
             return metric_options
     except Exception as e:
         application.logger.error(f"Error fetching metrics for device '{device_name}': {e}")
-        return []  # Return empty options if an error occurs
+        return []
 
 def get_total_records(session):
     try:
-        # Count the total number of MetricSnapshots
+        # count total number of MetricSnapshots in db
         total_records = session.query(MetricSnapshot).count()
         return total_records
     except Exception as e:
@@ -253,7 +248,7 @@ def fetch_metric_details_paginated(session, page, page_size=20):
         print(f"Error fetching metric details: {e}")
         return []
 
-# Callback to update the table
+# table callback
 @dash_app.callback(
     [
         dash.dependencies.Output("records-table", "data"),
@@ -272,9 +267,9 @@ def fetch_metric_details_paginated(session, page, page_size=20):
 )
 def update_table(next_clicks, previous_clicks, current_page):
     page = current_page or 1
-    page_size = 20  # Number of records per page
+    page_size = 20  # number of records per page
 
-    # Adjust page number based on button clicks
+    # find which button was clicked and update page number accordingly
     ctx = dash.callback_context
     if ctx.triggered:
         button_id = ctx.triggered[0]["prop_id"].split(".")[0]
@@ -285,14 +280,14 @@ def update_table(next_clicks, previous_clicks, current_page):
 
     try:
         with DatabaseManager(application.logger, application.engine) as session:
-            # Get total records to calculate last page
+            # number of total records
             total_records = get_total_records(session)
-            max_page = (total_records + page_size - 1) // page_size  # Ceiling division
+            max_page = (total_records + page_size - 1) // page_size  # formula for page number calculation
             
-            # Fetch data for the current page
+            # fetch data for the current page
             data = fetch_metric_details_paginated(session, page, page_size)
             
-            # Determine whether buttons should be disabled
+            # determine whether buttons should be disabled
             disable_next = page >= max_page
             disable_previous = page <= 1
             
@@ -305,16 +300,15 @@ def update_table(next_clicks, previous_clicks, current_page):
 
 @dash_app.callback(
     dash.dependencies.Output("histogram", "figure"),
-    [dash.dependencies.Input("url", "pathname")]  # Trigger when the page is loaded
+    [dash.dependencies.Input("url", "pathname")]  # trigger when the page is loaded
 )
 def update_histogram(pathname):
     if pathname != "/dash/histogram":
         return dash.no_update
     
-    # Query the database
     try:
+        # query to fetch all metric data grouped by metric_type_id
         with DatabaseManager(application.logger, application.engine) as session:
-            # Query to fetch all metric data grouped by metric_type_id
             query = session.query(
                 MetricValue.device_metric_type_id,
                 DeviceMetricType.name.label("metric_type_name"),
@@ -323,7 +317,7 @@ def update_histogram(pathname):
             .join(DeviceMetricType, MetricValue.device_metric_type_id == DeviceMetricType.device_metric_type_id)\
             .order_by(MetricValue.device_metric_type_id).all()
 
-            # Process data
+            # processing the data
             data_by_type = {}
             names_by_type = {}
             for record in query:
@@ -338,10 +332,10 @@ def update_histogram(pathname):
                     data_by_type[metric_type_id] = []
                 data_by_type[metric_type_id].append(value)
 
-            # Create traces for each metric_type_id
+            # creating traces for each metric_type_id
             traces = []
             for metric_type_id, values in data_by_type.items():
-                x_indices = list(range(len(values)))  # Indexing for x-axis
+                x_indices = list(range(len(values)))  # indexing for x-axis
                 metric_type_name = names_by_type[metric_type_id]
                 traces.append(go.Scatter(
                     x=x_indices,
@@ -350,7 +344,7 @@ def update_histogram(pathname):
                     name=f"Metric Type {metric_type_name}"
                 ))
 
-            # Define the layout
+            # layout
             layout = go.Layout(
                 title="Metric Values by Metric Type",
                 xaxis={"title": "Index"},
@@ -358,7 +352,6 @@ def update_histogram(pathname):
                 legend={"title": "Metric Types"}
             )
 
-            # Create and return the figure
             return {"data": traces, "layout": layout}
 
     except Exception as e:
@@ -373,7 +366,7 @@ class Application:
         self.config = Config()
         self.logger = logging.getLogger(__name__)
         self.logger.debug("Application starting...")
-        # Connect to the SQLite database
+        # connect to the SQLite database
         try:
             self.engine = create_engine(self.config.database.engine_string)
 
@@ -498,6 +491,4 @@ def getMetricSnapshot(metric_snapshot_id):
         return app.response_class(pretty_response, content_type="application/json")
 
 if __name__ == "__main__":
-    # app.run(port=8000, debug=True)
     app.run()
-    # wsgi return server.server
