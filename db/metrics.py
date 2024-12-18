@@ -1,20 +1,11 @@
-import datetime
-from dataclasses import dataclass, field
+from datetime import datetime, timezone
+from dataclasses import dataclass
 from .models import Base, Device, DeviceMetricType, MetricSnapshot, MetricValue
-# from cache_logic.caching import Cache
-
-# class CachingManager:
-#     def __enter__(self):
-#         if not self.cache.isExpired():
-#             return self.cache.getData()
-#         return None
 
 @dataclass
 class Metrics:
     def __init__(self, logger):
-        # self.people: list[Person] = field(default_factory=list)
         self.logger = logger
-        # self.cache = Cache()
 
     def getAllMetrics(self, session):
         self.logger.debug("Fetching all metrics")
@@ -43,8 +34,8 @@ class Metrics:
             session.flush()  # Get the ID
 
         server_timestamp_utc = datetime.datetime.now().strftime("%d-%m-%Y %H:%M:%S") 
-        # get server timezone properly
-        server_timezone_mins = 0
+        now_UTC = datetime.now(timezone.utc)
+        server_timezone_mins = int(now_UTC.astimezone().utcoffset().total_seconds() / 60)
 
         for snapshot in snapshots:
             device_metric_type_id = snapshot["device_metric_type_id"]
