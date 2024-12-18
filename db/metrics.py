@@ -33,7 +33,7 @@ class Metrics:
             session.add(device)
             session.flush()  # Get the ID
 
-        server_timestamp_utc = datetime.datetime.now().strftime("%d-%m-%Y %H:%M:%S") 
+        server_timestamp_utc = datetime.now().strftime("%d-%m-%Y %H:%M:%S") 
         now_UTC = datetime.now(timezone.utc)
         server_timezone_mins = int(now_UTC.astimezone().utcoffset().total_seconds() / 60)
 
